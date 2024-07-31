@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./app
+    container_name: web-1
+    network_mode : "host"
+    ports:
+      - "5000:5000"
+    environment:
+      - MYSQL_HOST=127.0.0.1
+      - MYSQL_PORT=3306
+      - MYSQL_USER=dbuser
+      - MYSQL_PASSWORD=1234
+      - MYSQL_DB=gizadb
