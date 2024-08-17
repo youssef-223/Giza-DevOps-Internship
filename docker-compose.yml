@@ -3,7 +3,7 @@ version: '3.8'
 services:
   web:
     # build: ./app
-    image: youssef223/giza_project    # to use the image from the CI pipeline
+    image: youssef223/giza_project_${params.BUILD_NUMBER}   # to use the image from the CI pipeline
     container_name: web-1
     network_mode : "host"
     ports:
