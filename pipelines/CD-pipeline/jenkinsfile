@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'youssef223/giza_project'  // Docker image name
+        DOCKER_CREDENTIALS_ID = 'youssef223'      // Docker Hub credentials ID
+        COMPOSE_FILE_PATH = './giza_project/docker-compose.yml' // Path to the docker-compose file
+    }
+    
+    parameters {
+        string(name: 'BUILD_NUMBER', defaultValue: '', description: 'Build number to use for Docker image')
+    }
+    
+    stages {
+        
+        stage('Checkout') {
+            steps {
+                sh 'git clone https://github.com/youssef-223/Giza-DevOps-Internship.git'
+            }
+        }
+        
+        stage('Kill Running Containers') {
+            steps {
+                script {
+                    sh """
+                    echo ">>>>>>>>> Start Clearing old containers"
+                    CONTAINERS=\$(docker ps -q --filter "name=web-1")
+                    if [ -n "\$CONTAINERS" ]; then
+                        docker stop \$CONTAINERS
+                        docker rm -f \$CONTAINERS
+                        echo 'Clearing old containers succeeded'
+                    else
+                        echo 'No containers to remove'
+                    fi
+                    """
+                }
+            }
+        }
+
+        stage('Delete Local Images') {
+            steps {
+                script {
+                    sh """
+                    echo ">>>>>>>>> Start Clearing old docker images"
+                    docker ps -a -q --filter "ancestor=${DOCKER_IMAGE}:latest" | xargs -r docker stop
+                    docker ps -a -q --filter "ancestor=${DOCKER_IMAGE}:latest" | xargs -r docker rm
+                    docker rmi -f ${DOCKER_IMAGE}:latest
+                    echo 'Clearing old images succeeded'
+                    """
+                }
+            }
+        }
+
+        stage('Pull Latest Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry-1.docker.io', "${DOCKER_CREDENTIALS_ID}") {
+                        sh "docker pull ${DOCKER_IMAGE}:version_${params.BUILD_NUMBER}"
+                    }
+                }
+            }
+        }
+
+        stage('Run Docker-Compose') {
+            steps {
+                script {
+                    sh """
+                    docker-compose -f ${COMPOSE_FILE_PATH} up -d
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
