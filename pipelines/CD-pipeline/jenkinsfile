@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'youssef223/giza_project'  // Docker image name
         DOCKER_CREDENTIALS_ID = 'youssef223'      // Docker Hub credentials ID
-        COMPOSE_FILE_PATH = './giza_project/docker-compose.yml' // Path to the docker-compose file
+        COMPOSE_FILE_PATH = './Giza-DevOps-Internship/docker-compose.yml' // Path to the docker-compose file
     }
     
     parameters {
@@ -24,13 +24,15 @@ pipeline {
                 script {
                     sh """
                     echo ">>>>>>>>> Start Clearing old containers"
-                    CONTAINERS=\$(docker ps -q --filter "name=web-1")
-                    if [ -n "\$CONTAINERS" ]; then
-                        docker stop \$CONTAINERS
-                        docker rm -f \$CONTAINERS
-                        echo 'Clearing old containers succeeded'
+                    CONTAINER_NAME="web-1"
+                    EXISTING_CONTAINER_ID=\$(docker ps -aq -f name=\$CONTAINER_NAME)
+                    if [ -n "\$EXISTING_CONTAINER_ID" ]; then
+                        echo "Stopping and removing existing container: \$CONTAINER_NAME"
+                        docker stop \$EXISTING_CONTAINER_ID || true
+                        docker rm -f \$EXISTING_CONTAINER_ID || true
+                        echo "Existing container removed: \$CONTAINER_NAME"
                     else
-                        echo 'No containers to remove'
+                        echo "No existing container to remove"
                     fi
                     """
                 }
@@ -65,7 +67,10 @@ pipeline {
             steps {
                 script {
                     sh """
+                    # Replace BUILD_TAG with the actual build number
+                    sed -i 's|\${BUILD_TAG}|version_${params.BUILD_NUMBER}|' ${COMPOSE_FILE_PATH}
                     docker-compose -f ${COMPOSE_FILE_PATH} up -d
+
                     """
                 }
             }
