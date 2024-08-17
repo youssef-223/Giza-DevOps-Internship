@@ -77,9 +77,6 @@ pipeline {
                     docker.withRegistry('https://registry-1.docker.io', "${DOCKER_CREDENTIALS_ID}") {
                         // Push the Docker image with the tag version_${env.BUILD_NUMBER}
                         docker.image("${APP_IMAGE}:version_${env.BUILD_NUMBER}").push()
-                        // Also push the image with the latest tag
-                        docker.image("${APP_IMAGE}:version_${env.BUILD_NUMBER}").tag('latest')
-                        docker.image("${APP_IMAGE}:latest").push()
                     }
                 }
             }
